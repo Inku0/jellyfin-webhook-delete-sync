@@ -68,7 +68,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("failed to look up movie: %s: %s", payload.Name, err)
 		}
-		log.Printf("%v", lookup)
+		log.Printf("%+v", lookup)
 		_, err = s.Radarr.EditMovies(&radarr.BulkEdit{
 			MovieIDs:  []int64{lookup[0].ID},
 			Monitored: starr.False(),
@@ -76,13 +76,13 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("failed to unmonitor movie: %s: %s", payload.Name, err)
 		}
-		
+
 	case "Series":
 		lookup, err := s.Sonarr.Lookup(payload.Name + " " + payload.Year)
 		if err != nil {
 			log.Fatalf("failed to look up series: %s", err)
 		}
-		log.Printf("%v", lookup)
+		log.Printf("%+v", lookup)
 		_, err = s.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
 			Monitored: false,
 			ID:        lookup[0].ID,
