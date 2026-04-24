@@ -21,9 +21,16 @@ func qbit() (error, *qbt.Client) {
 		return err, nil
 	}
 
-	qb := qbt.NewClient(os.Getenv("QBIT_HOST") + ":" + os.Getenv("QBIT_PORT"))
+	var (
+		qbitHost     = os.Getenv("QBIT_HOST")
+		qbitPort     = os.Getenv("QBIT_PORT")
+		qbitUsername = os.Getenv("QBIT_USERNAME")
+		qbitPassword = os.Getenv("QBIT_PASSWORD")
+	)
 
-	err = qb.Login(os.Getenv("QBIT_USERNAME"), os.Getenv("QBIT_PASSWORD"))
+	qb := qbt.NewClient(qbitHost + ":" + qbitPort)
+
+	err = qb.Login(qbitUsername, qbitPassword)
 	if err != nil {
 		return err, nil
 	}
