@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-const port = 666
+const port = "666"
 
 type Deletion struct {
 	Name         string `json:"Name"`
@@ -22,7 +22,7 @@ type Deletion struct {
 func main() {
 
 	http.HandleFunc("/webhook", listener)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(port, nil))
 
 }
 
