@@ -4,7 +4,11 @@ go 1.26.1
 
 require (
 	github.com/joho/godotenv v1.5.1
+	github.com/superturkey650/go-qbittorrent v0.0.0-20250509144237-d119a59ccf27
 	golift.io/starr v1.3.1
 )
 
-require golang.org/x/net v0.49.0 // indirect
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	golang.org/x/net v0.49.0 // indirect
+)

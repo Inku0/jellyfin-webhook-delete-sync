@@ -10,14 +10,6 @@ import (
 	"golift.io/starr/sonarr"
 )
 
-type missingServiceError struct {
-	missing string
-}
-
-func (e *missingServiceError) Error() string {
-	return fmt.Sprintf("missing from .env: %s", e.missing)
-}
-
 type Services struct {
 	Radarr *radarr.Radarr
 	Sonarr *sonarr.Sonarr
@@ -26,7 +18,7 @@ type Services struct {
 func start() (error, *Services) {
 	err := godotenv.Load()
 	if err != nil {
-		return &missingServiceError{"file itself"}, nil
+		return err, nil
 	}
 
 	var (
@@ -40,21 +32,6 @@ func start() (error, *Services) {
 		radarrPort   = os.Getenv("RADARR_PORT")
 		radarrApiKey = os.Getenv("RADARR_API_KEY")
 	)
-
-	switch "" {
-	case sonarrHost:
-		return &missingServiceError{"SONARR_HOST"}, nil
-	case sonarrPort:
-		return &missingServiceError{"SONARR_PORT"}, nil
-	case sonarrApiKey:
-		return &missingServiceError{"SONARR_API_KEY"}, nil
-	case radarrHost:
-		return &missingServiceError{"RADARR_HOST"}, nil
-	case radarrPort:
-		return &missingServiceError{"RADARR_PORT"}, nil
-	case radarrApiKey:
-		return &missingServiceError{"RADARR_API_KEY"}, nil
-	}
 
 	// port could be unset...
 	c := starr.New(sonarrApiKey, sonarrHost+":"+sonarrPort, 0)

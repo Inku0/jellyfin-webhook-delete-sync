@@ -88,7 +88,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 			ID:        lookup[0].ID,
 		}, false)
 		if err != nil {
-			log.Fatalf("failed to unmonitor movie: %s: %s", payload.Name, err)
+			log.Fatalf("failed to unmonitor series: %s: %s", payload.Name, err)
 		}
 	}
 
