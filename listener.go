@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -58,7 +59,13 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.find(payload)
+	err, path := s.findPath(payload)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	fmt.Printf("%v", path)
 	// Do something with the payload data...
 }
 

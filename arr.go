@@ -80,6 +80,26 @@ func start() (error, *Services) {
 	}
 }
 
-func (s *Services) find(item Deletion) {
+func (s *Services) findPath(item Deletion) (error, []string) {
 	fmt.Printf("%v", item)
+	var path []string
+	if item.ItemType == "Movie" {
+		lookup, err := s.Radarr.Lookup(item.Name + " " + item.Year)
+		if err != nil {
+			return err, path
+		}
+		for _, movie := range lookup {
+			path = append(path, movie.Path)
+		}
+	} else if item.ItemType == "Movie" {
+		lookup, err := s.Sonarr.Lookup(item.Name + " " + item.Year)
+		if err != nil {
+			return err, path
+		}
+		for _, series := range lookup {
+			path = append(path, series.Path)
+		}
+	}
+
+	return nil, path
 }
