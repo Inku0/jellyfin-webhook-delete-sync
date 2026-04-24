@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-const port = "666"
+const port = ":666"
 
 type Deletion struct {
 	Name         string `json:"Name"`
