@@ -1,4 +1,4 @@
-package src
+package main
 
 type qbittorrentInfo struct {
 	username string
