@@ -18,18 +18,6 @@ func (e *missingServiceError) Error() string {
 	return fmt.Sprintf("missing from .env: %s", e.missing)
 }
 
-type sonarrInfo struct {
-	apiKey string
-	host   string
-	port   string
-}
-
-type radarrInfo struct {
-	apiKey string
-	host   string
-	port   string
-}
-
 type Services struct {
 	Radarr *radarr.Radarr
 	Sonarr *sonarr.Sonarr
@@ -80,26 +68,7 @@ func start() (error, *Services) {
 	}
 }
 
-func (s *Services) findPath(item Deletion) (error, []string) {
-	fmt.Printf("%v", item)
-	var path []string
-	if item.ItemType == "Movie" {
-		lookup, err := s.Radarr.Lookup(item.Name + " " + item.Year)
-		if err != nil {
-			return err, path
-		}
-		for _, movie := range lookup {
-			path = append(path, movie.Path)
-		}
-	} else if item.ItemType == "Movie" {
-		lookup, err := s.Sonarr.Lookup(item.Name + " " + item.Year)
-		if err != nil {
-			return err, path
-		}
-		for _, series := range lookup {
-			path = append(path, series.Path)
-		}
-	}
-
-	return nil, path
+func (s *Services) find(item Deletion) (error, int64) {
+	// deprecated
+	return fmt.Errorf("didn't find %s %s", item.ItemType, item.Name), 0
 }
