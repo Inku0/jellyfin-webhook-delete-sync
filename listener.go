@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/razsteinmetz/go-ptn"
 	"github.com/superturkey650/go-qbittorrent/qbt"
 )
 
@@ -154,11 +155,15 @@ func listener(w http.ResponseWriter, r *http.Request) {
 
 	nameHashes := make(map[string]string, len(torrents))
 	for _, torrent := range torrents {
-		nameHashes[torrent.Name] = torrent.Hash
+		parsed, err := ptn.Parse(torrent.Name)
+		if err != nil {
+			log.Fatalf("failed to parse %s", torrent.Name)
+		}
+		nameHashes[parsed.Title] = torrent.Hash
 	}
 
 	names := slices.Sorted(maps.Keys(nameHashes))
-	log.Printf("matching for %s", name)
+	log.Printf("matching for %s in %v", name, names)
 	for _, match := range fuzzy.RankFindNormalizedFold(name, names) {
 		log.Printf("matched %s with distance %d", match.Target, match.Distance)
 	}
