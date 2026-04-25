@@ -136,7 +136,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var category string
-	if payload.ItemType == "Movies" {
+	if payload.ItemType == "Movie" {
 		category = "movies"
 	} else if payload.ItemType == "Series" {
 		category = "tv"
