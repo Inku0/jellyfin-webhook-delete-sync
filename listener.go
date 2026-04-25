@@ -82,6 +82,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		for _, tag := range tags {
 			if tag.Label == "marked-for-death" {
 				tagID = tag.ID
+				log.Printf("found ID for marked-for-death: %d", tagID)
 			}
 		}
 
@@ -111,6 +112,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		var tagID int
 		for _, tag := range tags {
 			if tag.Label == "marked-for-death" {
+				log.Printf("found ID for marked-for-death: %d", tagID)
 				tagID = tag.ID
 			}
 		}
@@ -144,6 +146,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		Filter:   &name,
 		Category: &category,
 	})
+	log.Printf("%+v", torrents)
 
 	var hashes []string
 	for _, torrent := range torrents {
