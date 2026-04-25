@@ -71,7 +71,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("failed to look up movie: %s: %s", payload.Name, err)
 		}
-		log.Printf("%+v", lookup[0])
+		//log.Printf("%+v", lookup[0])
 
 		tags, err := s.Radarr.GetTags()
 		if err != nil {
@@ -102,7 +102,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("failed to look up series: %s", err)
 		}
-		log.Printf("%+v", lookup[0])
+		//log.Printf("%+v", lookup[0])
 
 		tags, err := s.Sonarr.GetTags()
 		if err != nil {
@@ -141,15 +141,16 @@ func listener(w http.ResponseWriter, r *http.Request) {
 	} else if payload.ItemType == "Series" {
 		category = "tv"
 	}
+	log.Printf("%s from %s", name, category)
 
 	torrents, err := qb.Torrents(qbt.TorrentsOptions{
 		Filter:   &name,
 		Category: &category,
 	})
-	log.Printf("%+v", torrents)
 
 	var hashes []string
 	for _, torrent := range torrents {
+		log.Printf("%s", torrent.Name)
 		hashes = append(hashes, torrent.Hash)
 	}
 
