@@ -7,6 +7,7 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"sort"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/razsteinmetz/go-ptn"
@@ -167,7 +168,12 @@ func listener(w http.ResponseWriter, r *http.Request) {
 	for _, n := range names {
 		log.Printf("%s", n)
 	}
-	for _, match := range fuzzy.RankFindNormalizedFold(name, names) {
+	matches := fuzzy.RankFind(name, names)
+	sort.Sort(matches)
+	if len(matches) == 0 {
+		log.Fatalf("matched nothing for %s", name)
+	}
+	for _, match := range matches {
 		log.Printf("matched %s with distance %d", match.Target, match.Distance)
 	}
 
