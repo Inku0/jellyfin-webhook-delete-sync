@@ -2,15 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"maps"
 	"net/http"
 	"slices"
-	"sort"
 
-	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/razsteinmetz/go-ptn"
+	"github.com/sahilm/fuzzy"
 	"github.com/superturkey650/go-qbittorrent/qbt"
 )
 
@@ -166,15 +166,17 @@ func listener(w http.ResponseWriter, r *http.Request) {
 	names := slices.Sorted(maps.Keys(nameHashes))
 	log.Printf("matching for %s in", name)
 	for _, n := range names {
-		log.Printf("%s", n)
+		fmt.Printf("%s", n)
 	}
-	matches := fuzzy.RankFind(name, names)
-	sort.Sort(matches)
+
+	matches := fuzzy.Find(name, names)
+
 	if len(matches) == 0 {
 		log.Fatalf("matched nothing for %s", name)
 	}
+
 	for _, match := range matches {
-		log.Printf("matched %s with distance %d", match.Target, match.Distance)
+		log.Printf("matched %s with score %d", match.Str, match.Score)
 	}
 
 	//result, err := qb.AddTorrentTags(hashes, []string{"marked-for-death"})
