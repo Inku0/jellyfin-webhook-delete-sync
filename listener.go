@@ -71,6 +71,9 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("failed to look up movie: %s: %s", payload.Name, err)
 		}
+		if len(lookup) == 0 {
+			log.Fatalf("failed to find match for %s in Radarr", payload.Name)
+		}
 		//log.Printf("%+v", lookup[0])
 
 		tags, err := s.Radarr.GetTags()
@@ -94,13 +97,15 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		//if err != nil {
 		//	log.Fatalf("failed to unmonitor movie: %s: %s", payload.Name, err)
 		//}
-
 		name = lookup[0].Title
 
 	case "Series":
 		lookup, err := s.Sonarr.Lookup(payload.Name + " " + payload.Year)
 		if err != nil {
 			log.Fatalf("failed to look up series: %s", err)
+		}
+		if len(lookup) == 0 {
+			log.Fatalf("failed to find match for %s in Sonarr", payload.Name)
 		}
 		//log.Printf("%+v", lookup[0])
 
@@ -147,7 +152,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		Category: &category,
 	})
 
-	var nameHashes map[string]string
+	nameHashes := make(map[string]string, len(torrents))
 	for _, torrent := range torrents {
 		nameHashes[torrent.Name] = torrent.Hash
 	}
