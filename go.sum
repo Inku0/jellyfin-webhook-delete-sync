@@ -7,6 +7,8 @@ github.com/lithammer/fuzzysearch v1.1.8 h1:/HIuJnjHuXS8bKaiTMeeDlW2/AyIWk2brx1V8
 github.com/lithammer/fuzzysearch v1.1.8/go.mod h1:IdqeyBClc3FFqSzYq/MXESsS4S0FsZ5ajtkr5xPLts4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/razsteinmetz/go-ptn v1.0.0 h1:bLJzpwg16iASG2omVogBr8BZRlA56g9drhNa+OXHAY0=
+github.com/razsteinmetz/go-ptn v1.0.0/go.mod h1:B6toL0IaRZ8kUJ/h29QRitsbfsOypzqVzU8IaakxIVI=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/superturkey650/go-qbittorrent v0.0.0-20250509144237-d119a59ccf27 h1:rKbgmJ9kmHbnEWLPdlcsjGL4ISTFh10kiD1XwBvYOg4=
