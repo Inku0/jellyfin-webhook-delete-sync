@@ -163,7 +163,10 @@ func listener(w http.ResponseWriter, r *http.Request) {
 	}
 
 	names := slices.Sorted(maps.Keys(nameHashes))
-	log.Printf("matching for %s in %v", name, names)
+	log.Printf("matching for %s in", name)
+	for _, n := range names {
+		log.Printf("%s", n)
+	}
 	for _, match := range fuzzy.RankFindNormalizedFold(name, names) {
 		log.Printf("matched %s with distance %d", match.Target, match.Distance)
 	}
