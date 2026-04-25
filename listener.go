@@ -166,7 +166,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 	names := slices.Sorted(maps.Keys(nameHashes))
 	log.Printf("matching for %s in", name)
 	for _, n := range names {
-		fmt.Printf("%s", n)
+		fmt.Printf("%s\n", n)
 	}
 
 	matches := fuzzy.Find(name, names)
