@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/superturkey650/go-qbittorrent/qbt"
 	"golift.io/starr"
 	"golift.io/starr/radarr"
 	"golift.io/starr/sonarr"
@@ -56,11 +57,13 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		log.Printf("received deletion for: %s from user %s", payload.Name, payload.Username)
 	}
 
-	err, s := start()
+	s, err := start()
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
+
+	var name string
 
 	switch payload.ItemType {
 	case "Movie":
@@ -69,13 +72,29 @@ func listener(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("failed to look up movie: %s: %s", payload.Name, err)
 		}
 		log.Printf("%+v", lookup[0])
+
+		tags, err := s.Radarr.GetTags()
+		if err != nil {
+			log.Fatalf("failed to get tags from Radarr: %s", err)
+		}
+
+		var tagID int
+		for _, tag := range tags {
+			if tag.Label == "marked-for-death" {
+				tagID = tag.ID
+			}
+		}
+
 		_, err = s.Radarr.EditMovies(&radarr.BulkEdit{
 			MovieIDs:  []int64{lookup[0].ID},
 			Monitored: starr.False(),
+			Tags:      []int{tagID},
 		})
 		if err != nil {
 			log.Fatalf("failed to unmonitor movie: %s: %s", payload.Name, err)
 		}
+
+		name = lookup[0].Title
 
 	case "Series":
 		lookup, err := s.Sonarr.Lookup(payload.Name + " " + payload.Year)
@@ -83,16 +102,59 @@ func listener(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("failed to look up series: %s", err)
 		}
 		log.Printf("%+v", lookup[0])
+
+		tags, err := s.Sonarr.GetTags()
+		if err != nil {
+			log.Fatalf("failed to get tags from Sonarr: %s", err)
+		}
+
+		var tagID int
+		for _, tag := range tags {
+			if tag.Label == "marked-for-death" {
+				tagID = tag.ID
+			}
+		}
+
 		_, err = s.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
 			Monitored: false,
 			ID:        lookup[0].ID,
+			Tags:      []int{tagID},
 		}, false)
 		if err != nil {
 			log.Fatalf("failed to unmonitor series: %s: %s", payload.Name, err)
 		}
+
+		name = lookup[0].Title
 	}
 
-	// Do something with the payload data...
+	qb, err := qbit()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	var category string
+	if payload.ItemType == "Movies" {
+		category = "movies"
+	} else if payload.ItemType == "Series" {
+		category = "tv"
+	}
+
+	torrents, err := qb.Torrents(qbt.TorrentsOptions{
+		Filter:   &name,
+		Category: &category,
+	})
+
+	var hashes []string
+	for _, torrent := range torrents {
+		hashes = append(hashes, torrent.Hash)
+	}
+
+	result, err := qb.AddTorrentTags(hashes, []string{"marked-for-death"})
+	if err != nil || result == false {
+		log.Fatalf("failed to add tags for hashes %v, because: %s", hashes, err)
+		return
+	}
 }
 
 func save(str string) {
