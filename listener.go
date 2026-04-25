@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"maps"
 	"net/http"
+	"slices"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/superturkey650/go-qbittorrent/qbt"
-	"golift.io/starr"
-	"golift.io/starr/radarr"
-	"golift.io/starr/sonarr"
 )
 
 const port = ":6666"
@@ -86,14 +86,14 @@ func listener(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		_, err = s.Radarr.EditMovies(&radarr.BulkEdit{
-			MovieIDs:  []int64{lookup[0].ID},
-			Monitored: starr.False(),
-			Tags:      []int{tagID},
-		})
-		if err != nil {
-			log.Fatalf("failed to unmonitor movie: %s: %s", payload.Name, err)
-		}
+		//_, err = s.Radarr.EditMovies(&radarr.BulkEdit{
+		//	MovieIDs:  []int64{lookup[0].ID},
+		//	Monitored: starr.False(),
+		//	Tags:      []int{tagID},
+		//})
+		//if err != nil {
+		//	log.Fatalf("failed to unmonitor movie: %s: %s", payload.Name, err)
+		//}
 
 		name = lookup[0].Title
 
@@ -116,15 +116,15 @@ func listener(w http.ResponseWriter, r *http.Request) {
 				tagID = tag.ID
 			}
 		}
-
-		_, err = s.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
-			Monitored: false,
-			ID:        lookup[0].ID,
-			Tags:      []int{tagID},
-		}, false)
-		if err != nil {
-			log.Fatalf("failed to unmonitor series: %s: %s", payload.Name, err)
-		}
+		//
+		//_, err = s.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
+		//	Monitored: false,
+		//	ID:        lookup[0].ID,
+		//	Tags:      []int{tagID},
+		//}, false)
+		//if err != nil {
+		//	log.Fatalf("failed to unmonitor series: %s: %s", payload.Name, err)
+		//}
 
 		name = lookup[0].Title
 	}
@@ -144,21 +144,25 @@ func listener(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s from %s", name, category)
 
 	torrents, err := qb.Torrents(qbt.TorrentsOptions{
-		Filter:   &name,
 		Category: &category,
 	})
 
-	var hashes []string
+	var nameHashes map[string]string
 	for _, torrent := range torrents {
-		log.Printf("%s", torrent.Name)
-		hashes = append(hashes, torrent.Hash)
+		nameHashes[torrent.Name] = torrent.Hash
 	}
 
-	result, err := qb.AddTorrentTags(hashes, []string{"marked-for-death"})
-	if err != nil || result == false {
-		log.Fatalf("failed to add tags for hashes %v, because: %s", hashes, err)
-		return
+	names := slices.Sorted(maps.Keys(nameHashes))
+	log.Printf("matching for %s", name)
+	for _, match := range fuzzy.RankFindNormalizedFold(name, names) {
+		log.Printf("matched %s with distance %d", match.Target, match.Distance)
 	}
+
+	//result, err := qb.AddTorrentTags(hashes, []string{"marked-for-death"})
+	//if err != nil || result == false {
+	//	log.Fatalf("failed to add tags for hashes %v, because: %s", hashes, err)
+	//	return
+	//}
 }
 
 func save(str string) {
