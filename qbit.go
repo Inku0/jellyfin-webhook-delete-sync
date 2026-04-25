@@ -15,10 +15,10 @@ type qbittorrentInfo struct {
 	port     string
 }
 
-func qbit() (error, *qbt.Client) {
+func qbit() (*qbt.Client, error) {
 	err := godotenv.Load()
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	var (
@@ -32,8 +32,8 @@ func qbit() (error, *qbt.Client) {
 
 	err = qb.Login(qbitUsername, qbitPassword)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
-	return nil, qb
+	return qb, nil
 }

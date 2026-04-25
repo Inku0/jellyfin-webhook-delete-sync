@@ -15,10 +15,10 @@ type Services struct {
 	Sonarr *sonarr.Sonarr
 }
 
-func start() (error, *Services) {
+func start() (*Services, error) {
 	err := godotenv.Load()
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	var (
@@ -39,10 +39,10 @@ func start() (error, *Services) {
 	c = starr.New(radarrApiKey, radarrHost+":"+radarrPort, 0)
 	r := radarr.New(c)
 
-	return nil, &Services{
+	return &Services{
 		Radarr: r,
 		Sonarr: s,
-	}
+	}, nil
 }
 
 func (s *Services) find(item Deletion) (error, int64) {
