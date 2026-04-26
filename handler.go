@@ -122,6 +122,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 
 	var name string
 	if service == "Radarr" {
+		log.Printf("finding %s", p.Name+" "+p.Year)
 		n, err := h.findMovie(p.Name + " " + p.Year)
 		if err != nil {
 			return err
@@ -143,6 +144,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		}
 
 	} else if service == "Sonarr" {
+		log.Printf("finding %s", p.Name+" "+p.Year)
 		n, err := h.findSeries(p.Name + " " + p.Year)
 		if err != nil {
 			return err
@@ -186,6 +188,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		}
 		nameHashes[parsed.Title] = append(nameHashes[parsed.Title], torrent.Hash)
 	}
+	log.Printf("parsed torrent names")
 
 	names := slices.Sorted(maps.Keys(nameHashes))
 
@@ -201,6 +204,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		hashes = append(hashes, nameHashes[match.Str]...)
 	}
 
+	log.Printf("adding tags to torrents")
 	result, err := h.QB.AddTorrentTags(hashes, []string{"marked-for-death"})
 	if err != nil {
 		return err
@@ -208,5 +212,6 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		return fmt.Errorf("failed to add tags for hashes %+v, because: %v", hashes, err)
 	}
 
+	log.Printf("success")
 	return nil
 }
