@@ -10,7 +10,6 @@ import (
 	"slices"
 
 	"github.com/razsteinmetz/go-ptn"
-	"github.com/sahilm/fuzzy"
 	"github.com/superturkey650/go-qbittorrent/qbt"
 )
 
@@ -27,7 +26,6 @@ type Deletion struct {
 }
 
 func main() {
-
 	http.HandleFunc("/webhook", listener)
 	log.Fatal(http.ListenAndServe(port, nil))
 
@@ -169,7 +167,7 @@ func listener(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s\n", n)
 	}
 
-	matches := fuzzy.Find(name, names)
+	matches := Find(name, names)
 
 	if len(matches) == 0 {
 		log.Fatalf("matched nothing for %s", name)
