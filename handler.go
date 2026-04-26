@@ -7,6 +7,7 @@ import (
 	"log"
 	"maps"
 	"net/http"
+	"os"
 	"slices"
 
 	"github.com/razsteinmetz/go-ptn"
@@ -135,13 +136,15 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			return err
 		}
 
-		_, err = h.Radarr.EditMovies(&radarr.BulkEdit{
-			Monitored: starr.False(),
-			MovieIDs:  []int64{n.ID},
-			Tags:      []int{tag},
-		})
-		if err != nil {
-			return err
+		if os.Getenv("DRY_RUN") == "false" {
+			_, err = h.Radarr.EditMovies(&radarr.BulkEdit{
+				Monitored: starr.False(),
+				MovieIDs:  []int64{n.ID},
+				Tags:      []int{tag},
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 	} else if service == "Sonarr" {
@@ -181,9 +184,11 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			Images:            n.Images,
 		}
 		fmt.Printf("%+v", input)
-		_, err = h.Sonarr.UpdateSeries(&input, false)
-		if err != nil {
-			return err
+		if os.Getenv("DRY_RUN") == "false" {
+			_, err = h.Sonarr.UpdateSeries(&input, false)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -226,11 +231,13 @@ func (h *WebhookHandler) processp(p Deletion) error {
 	}
 
 	log.Printf("adding tags to torrents")
-	result, err := h.QB.AddTorrentTags(hashes, []string{"marked-for-death"})
-	if err != nil {
-		return err
-	} else if result == false {
-		return fmt.Errorf("failed to add tags for hashes %+v, because: %v", hashes, err)
+	if os.Getenv("DRY_RUN") == "false" {
+		result, err := h.QB.AddTorrentTags(hashes, []string{"marked-for-death"})
+		if err != nil {
+			return err
+		} else if result == false {
+			return fmt.Errorf("failed to add tags for hashes %+v, because: %v", hashes, err)
+		}
 	}
 
 	log.Printf("success")
