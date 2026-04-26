@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/joho/godotenv"
 )
 
 const port = ":6666"
@@ -18,19 +20,29 @@ type Deletion struct {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	q, err := qbit()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
-	s, err := start()
+	r, err := createRadarr()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	s, err := createSonarr()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
 	h := WebhookHandler{
-		Radarr: s.Radarr,
-		Sonarr: s.Sonarr,
+		Radarr: r,
+		Sonarr: s,
 		QB:     q,
 	}
 

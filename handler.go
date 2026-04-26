@@ -17,7 +17,7 @@ import (
 )
 
 type WebhookHandler struct {
-	Radarr *radarr.Radarr // or whatever type start() returns
+	Radarr *radarr.Radarr
 	Sonarr *sonarr.Sonarr
 	QB     *qbt.Client
 }
@@ -48,97 +48,128 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	if p.Deleted == "true" {
 		log.Printf("received deletion for: %s from user %s", p.Name, p.Username)
-	}
-
-	err = processDeletion(h, p)
-	if err != nil {
-		log.Printf("error processing p: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		err = processDeletion(h, p)
+		if err != nil {
+			log.Printf("error processing p: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		log.Printf("received a request which was not for a deletion from %s", p.Username)
 	}
 }
 
+func (h *WebhookHandler) findMovie(name string) (*radarr.Movie, error) {
+	lookup, err := h.Radarr.Lookup(name)
+	if err != nil {
+		return nil, err
+	}
+	if len(lookup) == 0 {
+		return nil, fmt.Errorf("found 0 results for \"%s\" in Radarr", name)
+	}
+
+	return lookup[0], nil
+}
+
+func (h *WebhookHandler) findSeries(name string) (*sonarr.Series, error) {
+	lookup, err := h.Sonarr.Lookup(name)
+	if err != nil {
+		return nil, err
+	}
+	if len(lookup) == 0 {
+		return nil, fmt.Errorf("found 0 results for \"%s\" in Sonarr", name)
+	}
+
+	return lookup[0], nil
+}
+
+func (h *WebhookHandler) findTag(name string, service string) (int, error) {
+	// -1 indicates that the tag wasn't found
+	var tags []*starr.Tag
+	if service == "Radarr" {
+		t, err := h.Radarr.GetTags()
+		if err != nil {
+			return -1, err
+		}
+		tags = t
+	} else if service == "Sonarr" {
+		t, err := h.Sonarr.GetTags()
+		if err != nil {
+			return -1, err
+		}
+		tags = t
+	}
+
+	for _, tag := range tags {
+		if tag.Label == name {
+			log.Printf("found ID for %s: %d", name, tag.ID)
+			return tag.ID, nil
+		}
+	}
+
+	return -1, fmt.Errorf("found no results for tag \"%s\"", name)
+}
+
 func (h *WebhookHandler) processp(p Deletion) error {
+	var service string
+	if p.ItemType == "Movie" {
+		service = "Radarr"
+	} else if p.ItemType == "Series" {
+		service = "Sonarr"
+	} else {
+		return fmt.Errorf("unsupported ItemType: %s", p.ItemType)
+	}
+
 	var name string
-
-	switch p.ItemType {
-	case "Movie":
-		lookup, err := h.Radarr.Lookup(p.Name + " " + p.Year)
+	if service == "Radarr" {
+		n, err := h.findMovie(p.Name + " " + p.Year)
 		if err != nil {
 			return err
 		}
-		if len(lookup) == 0 {
-			return fmt.Errorf("failed to find match for %s in Radarr", p.Name)
-		}
-		//log.Printf("%+v", lookup[0])
+		name = n.Title
 
-		tags, err := h.Radarr.GetTags()
+		tag, err := h.findTag("marked-for-death", service)
 		if err != nil {
 			return err
-		}
-
-		var tagID int
-		for _, tag := range tags {
-			if tag.Label == "marked-for-death" {
-				tagID = tag.ID
-				log.Printf("found ID for marked-for-death: %d", tagID)
-			}
 		}
 
 		_, err = h.Radarr.EditMovies(&radarr.BulkEdit{
-			MovieIDs:  []int64{lookup[0].ID},
 			Monitored: starr.False(),
-			Tags:      []int{tagID},
+			MovieIDs:  []int64{n.ID},
+			Tags:      []int{tag},
 		})
 		if err != nil {
 			return err
 		}
-		name = lookup[0].Title
 
-	case "Series":
-		lookup, err := h.Sonarr.Lookup(p.Name + " " + p.Year)
+	} else if service == "Sonarr" {
+		n, err := h.findSeries(p.Name + " " + p.Year)
 		if err != nil {
 			return err
 		}
-		if len(lookup) == 0 {
-			return fmt.Errorf("failed to find match for %s in Sonarr", p.Name)
-		}
-		//log.Printf("%+v", lookup[0])
+		name = n.Title
 
-		tags, err := h.Sonarr.GetTags()
+		tag, err := h.findTag("marked-for-death", service)
 		if err != nil {
 			return err
-		}
-
-		var tagID int
-		for _, tag := range tags {
-			if tag.Label == "marked-for-death" {
-				log.Printf("found ID for marked-for-death: %d", tagID)
-				tagID = tag.ID
-			}
 		}
 
 		_, err = h.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
 			Monitored: false,
-			ID:        lookup[0].ID,
-			Tags:      []int{tagID},
+			ID:        n.ID,
+			Tags:      []int{tag},
 		}, false)
 		if err != nil {
 			return err
 		}
-
-		name = lookup[0].Title
-	default:
-		return fmt.Errorf("unsupported ItemType: %s", p.ItemType)
 	}
 
 	var category string
-	if p.ItemType == "Movie" {
+	if service == "Radarr" {
 		category = "movies"
-	} else if p.ItemType == "Series" {
+	} else if service == "Sonarr" {
 		category = "tv"
 	}
-	log.Printf("%s from %s", name, category)
 
 	torrents, err := h.QB.Torrents(qbt.TorrentsOptions{
 		Category: &category,
@@ -153,35 +184,28 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		if err != nil {
 			return err
 		}
-		//fmt.Printf("%v for %v\n", parsed.Title, torrent.Name)
 		nameHashes[parsed.Title] = append(nameHashes[parsed.Title], torrent.Hash)
 	}
 
 	names := slices.Sorted(maps.Keys(nameHashes))
-	//log.Printf("matching for %s in", name)
-	//for _, n := range names {
-	//	fmt.Printf("%s\n", n)
-	//}
 
 	matches := Find(name, names)
 	if len(matches) == 0 {
-		return fmt.Errorf("matched nothing for %s", name)
+		return fmt.Errorf("found no matches for %s in qBittorrent", name)
 	}
 
 	hashes := make([]string, 0)
 
 	for _, match := range matches {
-		log.Printf("matched %s with score %d", match.Str, match.Score)
-		for _, p := range nameHashes[match.Str] {
-			hashes = append(hashes, p)
-		}
+		log.Printf("matched %s to %s with score %d", name, match.Str, match.Score)
+		hashes = append(hashes, nameHashes[match.Str]...)
 	}
 
 	result, err := h.QB.AddTorrentTags(hashes, []string{"marked-for-death"})
 	if err != nil {
 		return err
 	} else if result == false {
-		return fmt.Errorf("failed to add tags for hashes %v, because: %v", hashes, err)
+		return fmt.Errorf("failed to add tags for hashes %+v, because: %v", hashes, err)
 	}
 
 	return nil
