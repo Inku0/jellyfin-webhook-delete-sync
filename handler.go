@@ -11,6 +11,7 @@ import (
 
 	"github.com/razsteinmetz/go-ptn"
 	"github.com/superturkey650/go-qbittorrent/qbt"
+	"golift.io/starr"
 	"golift.io/starr/radarr"
 	"golift.io/starr/sonarr"
 )
@@ -84,14 +85,14 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			}
 		}
 
-		//_, err = s.Radarr.EditMovies(&radarr.BulkEdit{
-		//	MovieIDs:  []int64{lookup[0].ID},
-		//	Monitored: starr.False(),
-		//	Tags:      []int{tagID},
-		//})
-		//if err != nil {
-		//	log.Fatalf("failed to unmonitor movie: %s: %s", p.Name, err)
-		//}
+		_, err = h.Radarr.EditMovies(&radarr.BulkEdit{
+			MovieIDs:  []int64{lookup[0].ID},
+			Monitored: starr.False(),
+			Tags:      []int{tagID},
+		})
+		if err != nil {
+			return err
+		}
 		name = lookup[0].Title
 
 	case "Series":
@@ -116,15 +117,15 @@ func (h *WebhookHandler) processp(p Deletion) error {
 				tagID = tag.ID
 			}
 		}
-		//
-		//_, err = s.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
-		//	Monitored: false,
-		//	ID:        lookup[0].ID,
-		//	Tags:      []int{tagID},
-		//}, false)
-		//if err != nil {
-		//	log.Fatalf("failed to unmonitor series: %s: %s", p.Name, err)
-		//}
+
+		_, err = h.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
+			Monitored: false,
+			ID:        lookup[0].ID,
+			Tags:      []int{tagID},
+		}, false)
+		if err != nil {
+			return err
+		}
 
 		name = lookup[0].Title
 	default:
@@ -146,36 +147,42 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		return err
 	}
 
-	nameHashes := make(map[string]string, len(torrents))
+	nameHashes := make(map[string][]string, len(torrents))
 	for _, torrent := range torrents {
 		parsed, err := ptn.Parse(torrent.Name)
 		if err != nil {
 			return err
 		}
-		nameHashes[parsed.Title] = torrent.Hash
+		//fmt.Printf("%v for %v\n", parsed.Title, torrent.Name)
+		nameHashes[parsed.Title] = append(nameHashes[parsed.Title], torrent.Hash)
 	}
 
 	names := slices.Sorted(maps.Keys(nameHashes))
-	log.Printf("matching for %s in", name)
-	for _, n := range names {
-		fmt.Printf("%s\n", n)
-	}
+	//log.Printf("matching for %s in", name)
+	//for _, n := range names {
+	//	fmt.Printf("%s\n", n)
+	//}
 
 	matches := Find(name, names)
-
 	if len(matches) == 0 {
 		return fmt.Errorf("matched nothing for %s", name)
 	}
 
+	hashes := make([]string, 0)
+
 	for _, match := range matches {
 		log.Printf("matched %s with score %d", match.Str, match.Score)
+		for _, p := range nameHashes[match.Str] {
+			hashes = append(hashes, p)
+		}
 	}
 
-	//result, err := qb.AddTorrentTags(hashes, []string{"marked-for-death"})
-	//if err != nil || result == false {
-	//	log.Fatalf("failed to add tags for hashes %v, because: %s", hashes, err)
-	//	return
-	//}
+	result, err := h.QB.AddTorrentTags(hashes, []string{"marked-for-death"})
+	if err != nil {
+		return err
+	} else if result == false {
+		return fmt.Errorf("failed to add tags for hashes %v, because: %v", hashes, err)
+	}
 
 	return nil
 }
