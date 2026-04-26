@@ -128,6 +128,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			return err
 		}
 		name = n.Title
+		log.Printf("found %s as %s", p.Name+" "+p.Year, name)
 
 		tag, err := h.findTag("marked-for-death", service)
 		if err != nil {
@@ -150,6 +151,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			return err
 		}
 		name = n.Title
+		log.Printf("found %s as %s", p.Name+" "+p.Year, name)
 
 		tag, err := h.findTag("marked-for-death", service)
 		if err != nil {
@@ -161,6 +163,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			ID:               n.ID,
 			Tags:             []int{tag},
 			QualityProfileID: 1,
+			Path:             "",
 		}, false)
 		if err != nil {
 			return err
