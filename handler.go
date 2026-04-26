@@ -158,12 +158,27 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			return err
 		}
 
+		tags := append(n.Tags, tag)
+
 		_, err = h.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
-			Monitored:        false,
-			ID:               n.ID,
-			Tags:             []int{tag},
-			QualityProfileID: 1,
-			Path:             "",
+			Monitored:         false,
+			SeasonFolder:      n.SeasonFolder,
+			UseSceneNumbering: n.UseSceneNumbering,
+			ID:                n.ID,
+			LanguageProfileID: n.LanguageProfileID,
+			QualityProfileID:  n.QualityProfileID,
+			TvdbID:            n.TvdbID,
+			ImdbID:            n.ImdbID,
+			TvMazeID:          n.TvMazeID,
+			TvRageID:          n.TvRageID,
+			Path:              n.Path,
+			SeriesType:        n.SeriesType,
+			Title:             n.Title,
+			TitleSlug:         n.TitleSlug,
+			RootFolderPath:    n.RootFolderPath,
+			Tags:              tags,
+			Seasons:           n.Seasons,
+			Images:            n.Images,
 		}, false)
 		if err != nil {
 			return err
