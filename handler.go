@@ -157,9 +157,10 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		}
 
 		_, err = h.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
-			Monitored: false,
-			ID:        n.ID,
-			Tags:      []int{tag},
+			Monitored:        false,
+			ID:               n.ID,
+			Tags:             []int{tag},
+			QualityProfileID: 1,
 		}, false)
 		if err != nil {
 			return err
