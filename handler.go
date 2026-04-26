@@ -160,7 +160,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 
 		tags := append(n.Tags, tag)
 
-		_, err = h.Sonarr.UpdateSeries(&sonarr.AddSeriesInput{
+		input := sonarr.AddSeriesInput{
 			Monitored:         false,
 			SeasonFolder:      n.SeasonFolder,
 			UseSceneNumbering: n.UseSceneNumbering,
@@ -179,7 +179,9 @@ func (h *WebhookHandler) processp(p Deletion) error {
 			Tags:              tags,
 			Seasons:           n.Seasons,
 			Images:            n.Images,
-		}, false)
+		}
+		fmt.Printf("%+v", input)
+		_, err = h.Sonarr.UpdateSeries(&input, false)
 		if err != nil {
 			return err
 		}
