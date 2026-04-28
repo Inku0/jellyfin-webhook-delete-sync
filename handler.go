@@ -232,18 +232,14 @@ func (h *WebhookHandler) processp(p Deletion) error {
 	}
 
 	// source: https://gobyexample.com/worker-pools
-	numJobs := len(torrents)
-
-	nameHashes := make(map[string][]string, len(torrents))
-
 	type result struct {
 		title string
 		hash  string
 		err   error
 	}
 
-	jobs := make(chan qbt.TorrentInfo, numJobs)
-	results := make(chan result, numJobs)
+	jobs := make(chan qbt.TorrentInfo) // queue of torrents workers will parse
+	results := make(chan result)       // carries parsed outputs back to the main goroutine
 
 	workers := 8
 	var wg sync.WaitGroup
@@ -263,8 +259,6 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		}()
 	}
 
-	// wrap in go func() so that they can run concurrently
-	// feed jobs
 	go func() {
 		for _, torrent := range torrents {
 			jobs <- torrent
@@ -272,21 +266,26 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		close(jobs)
 	}()
 
-	// close results after workers finish
 	go func() {
 		wg.Wait()
 		close(results)
 	}()
 
-	// this also run concurrently so a mutex is needed
-	var mu sync.Mutex
+	nameHashes := make(map[string][]string, len(torrents))
+
+	var firstErr error
 	for res := range results {
 		if res.err != nil {
-			return res.err
+			if firstErr == nil {
+				firstErr = res.err
+			}
+			continue
 		}
-		mu.Lock()
 		nameHashes[res.title] = append(nameHashes[res.title], res.hash)
-		mu.Unlock()
+	}
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	log.Printf("parsed torrent names")
