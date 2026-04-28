@@ -73,7 +73,6 @@ func (h *WebhookHandler) findMovie(name string) ([]*radarr.Movie, error) {
 	return lookup, nil
 }
 
-// TODO this finds serieses which aren't monitored
 func (h *WebhookHandler) findSeries(name string) ([]*sonarr.Series, error) {
 	all, err := h.Sonarr.GetAllSeries()
 	if err != nil {
@@ -130,16 +129,6 @@ func (h *WebhookHandler) findTag(name string, service string) (int, error) {
 	return -1, fmt.Errorf("found no results for tag \"%s\"", name)
 }
 
-func parseAll(w int, jobs <-chan qbt.TorrentInfo, results chan<- map[string][]string) {
-	parses := make(map[string][]string)
-	for j := range jobs {
-		parsed, _ := ptn.Parse(j.Name)
-
-		parses[parsed.Title] = append(parses[parsed.Title], j.Hash)
-	}
-	results <- parses
-}
-
 func (h *WebhookHandler) processp(p Deletion) error {
 	var service string
 	if p.ItemType == "Movie" {
@@ -157,7 +146,7 @@ func (h *WebhookHandler) processp(p Deletion) error {
 		if err != nil {
 			return err
 		}
-		log.Printf("found %s as", p.Name+" "+p.Year)
+		//log.Printf("found %s as", p.Name+" "+p.Year)
 		var ids []int64
 		for _, movie := range n {
 			ids = append(ids, movie.ID)
